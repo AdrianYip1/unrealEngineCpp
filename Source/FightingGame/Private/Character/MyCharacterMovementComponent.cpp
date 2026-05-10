@@ -30,8 +30,14 @@ void UMyCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Ti
 		}
 	}
 
-	if (FighterMovementState == EFighterMovementState::Jumping && IsMovingOnGround()) {
-		FighterMovementState = (bSprintHeld) ? EFighterMovementState::Sprinting : EFighterMovementState::Idle;
+	if ((FighterMovementState == EFighterMovementState::Jumping ||
+		FighterMovementState == EFighterMovementState::DoubleJump) && IsMovingOnGround()) {
+		if (bSprintHeld)
+			FighterMovementState = EFighterMovementState::Sprinting;
+		else if (bIsMovingHorizontally)
+			FighterMovementState = EFighterMovementState::Walking;
+		else
+			FighterMovementState = EFighterMovementState::Idle;
 		JumpsRemaining = 0;
 		GravityScale = UpGravity;
 		bShortHop = false;
@@ -62,6 +68,20 @@ void UMyCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Ti
 		float FallGrav = (bShortHop && Velocity.Z < 0.0f) ? ShortHopGravity : DownGravity;
 		GravityScale = (Velocity.Z < 0.0f) ? FallGrav : UpGravity;
 	}
+
+	if (IsMovingOnGround()
+		&& FighterMovementState != EFighterMovementState::Jumping
+		&& FighterMovementState != EFighterMovementState::DoubleJump
+		&& FighterMovementState != EFighterMovementState::AirDash
+		&& ActionState == EActionState::None)
+	{
+		if (bSprintHeld && bIsMovingHorizontally)
+			FighterMovementState = EFighterMovementState::Sprinting;
+		else if (!bSprintHeld)
+			FighterMovementState = bIsMovingHorizontally ? EFighterMovementState::Walking : EFighterMovementState::Idle;
+	}
+
+	bIsMovingHorizontally = false;
 }
 
 float UMyCharacterMovementComponent::CalculateSpeed() const
@@ -96,6 +116,8 @@ void UMyCharacterMovementComponent::MoveForward(float Direction)
 			MaxWalkSpeed = CalculateSpeed();
 			GetCharacterOwner()->AddMovementInput(FVector(1, 0, 0), Direction);
 		}
+
+		bIsMovingHorizontally = (Direction != 0.0f);
 	}
 }
 
@@ -125,7 +147,7 @@ void UMyCharacterMovementComponent::StartJump()
 		}
 	}
 	else if (IsFalling() && JumpsRemaining > 0 && ActionState == EActionState::None) {
-		FighterMovementState = EFighterMovementState::Jumping;
+		FighterMovementState = EFighterMovementState::DoubleJump;
 		Velocity.Z = 450.0f;
 		JumpsRemaining--;
 	}
@@ -149,10 +171,7 @@ void UMyCharacterMovementComponent::EndPressDown()
 void UMyCharacterMovementComponent::PressShift()
 {
 	bSprintHeld = true;
-	if (GetCharacterOwner() && IsMovingOnGround()) {
-		FighterMovementState = EFighterMovementState::Sprinting;
-	}
-	else if (GetCharacterOwner() && IsFalling() && AirDashesRemaining > 0 && ActionState == EActionState::None) {
+	if (GetCharacterOwner() && IsFalling() && AirDashesRemaining > 0 && ActionState == EActionState::None) {
 
 		FVector DashDir = FVector(FMath::Sign(DI_X), 0.0f, FMath::Sign(DI_Z)).GetSafeNormal();
 
@@ -178,7 +197,7 @@ void UMyCharacterMovementComponent::EndPressShift()
 {
 	bSprintHeld = false;
 	if (FighterMovementState == EFighterMovementState::Sprinting) {
-		FighterMovementState = EFighterMovementState::Idle;
+		FighterMovementState = bIsMovingHorizontally ? EFighterMovementState::Walking : EFighterMovementState::Idle;
 	}
 }
 
@@ -204,8 +223,6 @@ void UMyCharacterMovementComponent::LightAttack()
 		GEngine->AddOnScreenDebugMessage(-1, 5.f,FColor::Red, TEXT("Attack Start (Light)"));
 		AttackTimer = LightAttackDuration;
 	}
-
-
 }
 
 void UMyCharacterMovementComponent::CheckDirection(FVector2D Input) {

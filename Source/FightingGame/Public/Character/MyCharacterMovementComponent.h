@@ -45,12 +45,14 @@ public:
 	void LightAttack();
 	void CheckDirection(FVector2D Input);
 
+
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	float CalculateSpeed() const;
-	UPROPERTY(VisibleAnywhere, Category = "State")
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
 	EFighterMovementState FighterMovementState = EFighterMovementState::Idle;
 
-	UPROPERTY(VisibleAnywhere, Category = "State")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
 	EActionState ActionState = EActionState::None;
 
 protected:
@@ -110,4 +112,7 @@ private:
 
 	float AirDashTimer = 0.0f;
 	float AttackTimer = 0.0f;
+
+	bool bIsMovingHorizontally = false;
+
 };
