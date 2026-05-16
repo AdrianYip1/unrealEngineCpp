@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -12,6 +10,8 @@
 #include "InputActionValue.h"
 #include "InputAction.h"
 #include "InputMappingContext.h"
+#include "Components/BoxComponent.h"
+#include "Blueprint/UserWidget.h"
 #include "FirstCharacter.generated.h"
 
 UCLASS()
@@ -21,6 +21,16 @@ class FIGHTINGGAME_API AFirstCharacter : public ACharacter
 
 public:
 	AFirstCharacter(const FObjectInitializer& ObjectInitializer);
+
+	UFUNCTION()
+	void OnHitboxBeginOverlap(
+		UPrimitiveComponent* OverlappedComp,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex, 
+		bool bFromSweep,
+		const FHitResult& SweepResult
+	);
 
 protected:
 	virtual void BeginPlay() override;
@@ -64,6 +74,54 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	UInputAction* IA_DI;
 
+	UPROPERTY(EditAnywhere, Category = "Hurtbox")
+	UBoxComponent* HeadHurtbox;
+
+	UPROPERTY(EditAnywhere, Category = "Hurtbox")
+	UBoxComponent* TorsoHurtbox;
+
+	UPROPERTY(EditAnywhere, Category = "Hurtbox")
+	UBoxComponent* RightArmHurtbox;
+
+	UPROPERTY(EditAnywhere, Category = "Hurtbox")
+	UBoxComponent* LeftArmHurtbox;
+
+	UPROPERTY(EditAnywhere, Category = "Hurtbox")
+	UBoxComponent* RightForearmHurtbox;
+
+	UPROPERTY(EditAnywhere, Category = "Hurtbox")
+	UBoxComponent* LeftForearmHurtbox;
+
+	UPROPERTY(EditAnywhere, Category = "Hurtbox")
+	UBoxComponent* LeftThighHurtbox;
+
+	UPROPERTY(EditAnywhere, Category = "Hurtbox")
+	UBoxComponent* LeftCalfHurtbox;
+
+	UPROPERTY(EditAnywhere, Category = "Hurtbox")
+	UBoxComponent* RightThighHurtbox;
+
+	UPROPERTY(EditAnywhere, Category = "Hurtbox")
+	UBoxComponent* RightCalfHurtbox;
+
+	UPROPERTY(EditAnywhere, Category = "Hitbox")
+	UBoxComponent* RightHandHitbox;
+
+	UPROPERTY(EditAnywhere, Category = "Hitbox")
+	UBoxComponent* LeftHandHitbox;
+
+	UPROPERTY(EditAnywhere, Category = "Hitbox")
+	UBoxComponent* RightFootHitbox;
+
+	UPROPERTY(EditAnywhere, Category = "Hitbox")
+	UBoxComponent* LeftFootHitbox;
+
+	UPROPERTY(EditAnywhere, Category = "UI")
+	TSubclassOf<UUserWidget> HUDWidgetClass;
+
+	UPROPERTY()
+	UUserWidget* HUDWidget;
+
 
 	void Move(const FInputActionValue& Value);
 	void StartJump();
@@ -76,4 +134,5 @@ protected:
 	void LightAttack();
 	void CheckDirection(const FInputActionValue& Value);
 	void ResetDirection();
-};
+	void ReceiveDamage(float Damage);
+};	

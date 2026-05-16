@@ -16,11 +16,65 @@ AFirstCharacter::AFirstCharacter(const FObjectInitializer& ObjectInitializer)
 	MovementComponent = Cast<UMyCharacterMovementComponent>(GetCharacterMovement());
 
 	SetActorRotation(FRotator(0.0f, -90.0f, 0.0f));
+
+	HeadHurtbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Head Hurtbox"));
+	HeadHurtbox->SetupAttachment(GetMesh(), FName("head_socket"));
+
+	TorsoHurtbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Torso Hurtbox"));
+	TorsoHurtbox->SetupAttachment(GetMesh(), FName("torso_socket"));
+
+	RightArmHurtbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Right Arm Hurtbox"));
+	RightArmHurtbox->SetupAttachment(GetMesh(), FName("right_arm_socket"));
+
+	LeftArmHurtbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Left Arm Hurtbox"));
+	LeftArmHurtbox->SetupAttachment(GetMesh(), FName("left_arm_socket"));
+
+	RightForearmHurtbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Right Forearm Hurtbox"));
+	RightForearmHurtbox->SetupAttachment(GetMesh(), FName("right_forearm_socket"));
+
+	LeftForearmHurtbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Left Forearm Hurtbox"));
+	LeftForearmHurtbox->SetupAttachment(GetMesh(), FName("left_forearm_socket"));
+
+	LeftThighHurtbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Left Thigh Hurtbox"));
+	LeftThighHurtbox->SetupAttachment(GetMesh(), FName("left_thigh_socket"));
+
+	LeftCalfHurtbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Left Calf Hurtbox"));
+	LeftCalfHurtbox->SetupAttachment(GetMesh(), FName("left_calf_socket"));
+
+	RightThighHurtbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Right Thigh Hurtbox"));
+	RightThighHurtbox->SetupAttachment(GetMesh(), FName("right_thigh_socket"));
+
+	RightCalfHurtbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Right Calf Hurtbox"));
+	RightCalfHurtbox->SetupAttachment(GetMesh(), FName("right_calf_socket"));
+
+	RightHandHitbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Right Hand Hitbox"));
+	RightHandHitbox->SetupAttachment(GetMesh(), FName("right_hand_socket"));
+
+	LeftHandHitbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Left Hand Hitbox"));
+	LeftHandHitbox->SetupAttachment(GetMesh(), FName("left_hand_socket"));
+
+	RightFootHitbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Right Foot Hitbox"));
+	RightFootHitbox->SetupAttachment(GetMesh(), FName("right_foot_socket"));
+
+	LeftFootHitbox = CreateDefaultSubobject<UBoxComponent>(TEXT("Left Foot Hitbox"));
+	LeftFootHitbox->SetupAttachment(GetMesh(), FName("left_foot_socket"));
 }
 
 void AFirstCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	RightHandHitbox->OnComponentBeginOverlap.AddDynamic(this, &AFirstCharacter::OnHitboxBeginOverlap);
+	LeftHandHitbox->OnComponentBeginOverlap.AddDynamic(this, &AFirstCharacter::OnHitboxBeginOverlap);
+
+	RightFootHitbox->OnComponentBeginOverlap.AddDynamic(this, &AFirstCharacter::OnHitboxBeginOverlap);
+	LeftFootHitbox->OnComponentBeginOverlap.AddDynamic(this, &AFirstCharacter::OnHitboxBeginOverlap);
+
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (PC && PC->GetLocalPlayer()->GetControllerId() == 0 && HUDWidgetClass) {
+		HUDWidget = CreateWidget<UUserWidget>(PC, HUDWidgetClass);
+		HUDWidget->AddToViewport();
+	}
 }
 
 void AFirstCharacter::PossessedBy(AController* NewController)
@@ -113,4 +167,40 @@ void AFirstCharacter::CheckDirection(const FInputActionValue& Value)
 
 void AFirstCharacter::ResetDirection() {
 	if (MovementComponent) MovementComponent->CheckDirection(FVector2D::ZeroVector);
+}
+
+void AFirstCharacter::OnHitboxBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor == this) return;
+	if (!MovementComponent->isAttacking()) return;
+	if (!OtherComp->GetName().Contains(TEXT("Hurtbox"))) return;
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+		FString::Printf(TEXT("Used Attack: %s"), *UEnum::GetValueAsString(MovementComponent->GetCurrentAttackType())));
+
+	if (AFirstCharacter* Target = Cast<AFirstCharacter>(OtherActor)) {
+		float Damage = 0.0f;
+		if (MovementComponent) {
+			switch (MovementComponent->GetCurrentAttackType())
+			{
+				case EAttackType::GroundNeutral: Damage = 10.0f; break;
+				case EAttackType::GroundForward: Damage = 10.0f; break;
+				case EAttackType::GroundDown: Damage = 10.0f; break;
+				case EAttackType::GroundUp: Damage = 10.0f; break;
+
+				case EAttackType::AerialNeutral: Damage = 10.0f; break;
+				case EAttackType::AerialSide: Damage = 10.0f; break;
+				case EAttackType::AerialDown: Damage = 10.0f; break;
+				case EAttackType::AerialUp: Damage = 10.0f; break;
+				default: break;
+			}
+		}
+
+		Target->ReceiveDamage(Damage);
+	}
+}
+
+void AFirstCharacter::ReceiveDamage(float Damage)
+{
+	if (HealthComponent) HealthComponent->TakeDamage(Damage);
 }

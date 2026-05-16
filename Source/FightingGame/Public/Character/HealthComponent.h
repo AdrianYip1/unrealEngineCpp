@@ -12,17 +12,13 @@ class FIGHTINGGAME_API UHealthComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-public:	
-	// Sets default values for this component's properties
+public:
 	UHealthComponent();
+	void TakeDamage(float damage);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) float MaxHealth = 200.f;
+	UPROPERTY(BlueprintReadOnly) float CurrentHealth;
 
 protected:
-	// Called when the game starts
 	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
-		
 };

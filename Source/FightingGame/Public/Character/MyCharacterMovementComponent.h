@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -26,6 +24,22 @@ enum class EActionState : uint8
 	Shield
 };
 
+UENUM(BlueprintType)
+enum class EAttackType : uint8
+{
+	None,
+	// Ground
+	GroundNeutral,
+	GroundForward,
+	GroundUp,
+	GroundDown,
+	// Aerial
+	AerialNeutral,
+	AerialSide,
+	AerialUp,
+	AerialDown,
+};
+
 UCLASS()
 class FIGHTINGGAME_API UMyCharacterMovementComponent : public UCharacterMovementComponent
 {
@@ -44,7 +58,11 @@ public:
 	void EndPressTab();
 	void LightAttack();
 	void CheckDirection(FVector2D Input);
-
+	FVector2D getDI() const;
+	bool inAir();
+	bool canAttack();
+	bool isAttacking();
+	EAttackType GetCurrentAttackType() const { return CurrentAttackType; }
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	float CalculateSpeed() const;
@@ -55,13 +73,13 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
 	EActionState ActionState = EActionState::None;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	EAttackType CurrentAttackType = EAttackType::None;
+
 protected:
 
 	UPROPERTY(EditAnywhere, Category = "Movement Attributes")
 	float BaseSpeed = 600.0f;
-
-	UPROPERTY(EditAnywhere, Category = "Movement Attributes")
-	float MoveSpeed = 1.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Movement Attributes")
 	float FastFallStrength = 25.0f;
@@ -98,9 +116,10 @@ protected:
 	float AirDashDuration = 0.10f;
 
 	UPROPERTY(EditAnywhere, Category = "Attacks")
-	float LightAttackDuration = 0.40f;
+	float LightAttackDuration = 0.689f;
 
 private:
+	bool bFacingRight = true;
 	bool bSprintHeld = false;
 	bool bDownHeld = false;
 	bool bTabHeld = false;

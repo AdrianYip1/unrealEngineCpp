@@ -1,13 +1,11 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-#include "Character/MyCharacterMovementComponent.h"
+﻿#include "Character/MyCharacterMovementComponent.h"
 #include "GameFramework/Character.h"
 
 UMyCharacterMovementComponent::UMyCharacterMovementComponent()
 {
 	bConstrainToPlane = true;
 	PlaneConstraintNormal = FVector(0.0f, 1.0f, 0.0f);
-	AirControl = 0.45;
+	AirControl = 0.45f;
 }
 
 void UMyCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -25,8 +23,8 @@ void UMyCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Ti
 	if (ActionState == EActionState::Attacking) {
 		AttackTimer -= DeltaTime;
 		if (AttackTimer <= 0.0f) {
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Attack End (Light)"));
 			ActionState = EActionState::None;
+			CurrentAttackType = EAttackType::None;
 		}
 	}
 
@@ -54,6 +52,7 @@ void UMyCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Ti
 		FighterMovementState = (bSprintHeld) ? EFighterMovementState::Sprinting : EFighterMovementState::Idle;
 		if (bTabHeld) ActionState = EActionState::Shield;
 		bShortHop = false;
+		GravityScale = UpGravity;
 	}
 
 	switch (FighterMovementState) {
@@ -118,6 +117,8 @@ void UMyCharacterMovementComponent::MoveForward(float Direction)
 		}
 
 		bIsMovingHorizontally = (Direction != 0.0f);
+		if (Direction > 0.0f) bFacingRight = true;
+		else if (Direction < 0.0f) bFacingRight = false;
 	}
 }
 
@@ -212,20 +213,62 @@ void UMyCharacterMovementComponent::PressTab()
 void UMyCharacterMovementComponent::EndPressTab()
 {
 	bTabHeld = false;
-	ActionState = EActionState::None;
-
+	if (ActionState == EActionState::Shield)
+		ActionState = EActionState::None;
 }
 
 void UMyCharacterMovementComponent::LightAttack()
 {
-	if (ActionState == EActionState::None) {
-		ActionState = EActionState::Attacking;
-		GEngine->AddOnScreenDebugMessage(-1, 5.f,FColor::Red, TEXT("Attack Start (Light)"));
-		AttackTimer = LightAttackDuration;
+	if (ActionState != EActionState::None) return;
+
+	ActionState = EActionState::Attacking;
+	AttackTimer = LightAttackDuration;
+
+	const bool bAerial = IsFalling();
+	const float DirX = DI_X;
+	const float DirZ = DI_Z;
+
+	if (bAerial)
+	{
+		if (DirZ < 0.0f)
+			CurrentAttackType = EAttackType::AerialDown;
+		else if (DirZ > 0.0f)
+			CurrentAttackType = EAttackType::AerialUp;
+		else if (DirX != 0.0f)
+			CurrentAttackType = EAttackType::AerialSide;
+		else
+			CurrentAttackType = EAttackType::AerialNeutral;
+	}
+	else
+	{
+		if (bDownHeld || DirZ < 0.0f)
+			CurrentAttackType = EAttackType::GroundDown;
+		else if (DirZ > 0.0f)
+			CurrentAttackType = EAttackType::GroundUp;
+		else if (DirX != 0.0f)
+			CurrentAttackType = EAttackType::GroundForward;
+		else
+			CurrentAttackType = EAttackType::GroundNeutral;
 	}
 }
 
 void UMyCharacterMovementComponent::CheckDirection(FVector2D Input) {
 	DI_X = Input.X;
 	DI_Z = Input.Y;
+}
+
+FVector2D UMyCharacterMovementComponent::getDI() const {
+	return FVector2D(DI_X, DI_Z);
+}
+
+bool UMyCharacterMovementComponent::inAir() {
+	return (!IsMovingOnGround());
+}
+
+bool UMyCharacterMovementComponent::canAttack() {
+	return (ActionState == EActionState::None);
+}
+
+bool UMyCharacterMovementComponent::isAttacking() {
+	return (ActionState == EActionState::Attacking);
 }
