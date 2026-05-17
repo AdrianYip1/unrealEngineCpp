@@ -6,6 +6,7 @@ UMyCharacterMovementComponent::UMyCharacterMovementComponent()
 	bConstrainToPlane = true;
 	PlaneConstraintNormal = FVector(0.0f, 1.0f, 0.0f);
 	AirControl = 0.45f;
+	bRunPhysicsWithNoController = true;
 }
 
 void UMyCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -26,6 +27,12 @@ void UMyCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Ti
 			ActionState = EActionState::None;
 			CurrentAttackType = EAttackType::None;
 		}
+	}
+
+	if (ActionState == EActionState::Knockback) {
+		KnockbackTimer -= DeltaTime;
+		if (KnockbackTimer <= 0.0f)
+			ActionState = EActionState::None;
 	}
 
 	if ((FighterMovementState == EFighterMovementState::Jumping ||
@@ -271,4 +278,30 @@ bool UMyCharacterMovementComponent::canAttack() {
 
 bool UMyCharacterMovementComponent::isAttacking() {
 	return (ActionState == EActionState::Attacking);
+}
+
+void UMyCharacterMovementComponent::DealKnockback(float RemainingHealth, float Damage, EAttackType AttackType, float KnockbackDir)
+{
+	float force = 300.0f + (1.0f - RemainingHealth) * Damage * 50.0f;
+
+	FVector Launch = FVector::ZeroVector;
+	switch (AttackType)
+	{
+	case EAttackType::GroundNeutral: Launch = FVector(KnockbackDir * force * 0.6f, 0.0f, force * 0.8f); break;
+	case EAttackType::GroundForward: Launch = FVector(KnockbackDir * force, 0.0f, force * 0.4f); break;
+	case EAttackType::GroundDown:    Launch = FVector(KnockbackDir * force * 0.3f, 0.0f, -force); break;
+	case EAttackType::GroundUp:      Launch = FVector(KnockbackDir * force * 0.2f, 0.0f, force * 1.5f); break;
+
+	case EAttackType::AerialNeutral: Launch = FVector(KnockbackDir * force * 0.6f, 0.0f, force * 0.8f); break;
+	case EAttackType::AerialSide:    Launch = FVector(KnockbackDir * force, 0.0f, force * 0.3f); break;
+	case EAttackType::AerialDown:    Launch = FVector(KnockbackDir * force * 0.3f, 0.0f, -force * 1.2f); break;
+	case EAttackType::AerialUp:      Launch = FVector(KnockbackDir * force * 0.2f, 0.0f, force * 1.5f); break;
+	default: break;
+	}
+
+	ActionState = EActionState::Knockback;
+	KnockbackTimer = 0.4f;
+
+	Velocity = Launch;
+	SetMovementMode(MOVE_Falling);
 }

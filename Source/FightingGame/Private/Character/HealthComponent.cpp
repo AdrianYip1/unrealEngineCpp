@@ -19,3 +19,8 @@ void UHealthComponent::TakeDamage(float Damage)
 {
 	CurrentHealth = FMath::Clamp(CurrentHealth - Damage, 0.f, MaxHealth);
 }
+
+float UHealthComponent::GetHealthPercentage()
+{
+	return CurrentHealth / MaxHealth;
+}

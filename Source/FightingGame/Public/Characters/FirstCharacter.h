@@ -135,4 +135,5 @@ protected:
 	void CheckDirection(const FInputActionValue& Value);
 	void ResetDirection();
 	void ReceiveDamage(float Damage);
+	void RecieveKnockback(float Damage, EAttackType AttackType, float KnockbackDir);
 };	

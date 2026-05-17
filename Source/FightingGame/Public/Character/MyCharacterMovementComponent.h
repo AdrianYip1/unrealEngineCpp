@@ -21,7 +21,8 @@ enum class EActionState : uint8
 {
 	None,
 	Attacking,
-	Shield
+	Shield,
+	Knockback
 };
 
 UENUM(BlueprintType)
@@ -63,6 +64,7 @@ public:
 	bool canAttack();
 	bool isAttacking();
 	EAttackType GetCurrentAttackType() const { return CurrentAttackType; }
+	void DealKnockback(float RemainingHealth, float Damage, EAttackType AttackType, float KnockbackDir);
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	float CalculateSpeed() const;
@@ -131,6 +133,7 @@ private:
 
 	float AirDashTimer = 0.0f;
 	float AttackTimer = 0.0f;
+	float KnockbackTimer = 0.0f;
 
 	bool bIsMovingHorizontally = false;
 

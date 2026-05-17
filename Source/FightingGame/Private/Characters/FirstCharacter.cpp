@@ -64,6 +64,8 @@ void AFirstCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+
 	RightHandHitbox->OnComponentBeginOverlap.AddDynamic(this, &AFirstCharacter::OnHitboxBeginOverlap);
 	LeftHandHitbox->OnComponentBeginOverlap.AddDynamic(this, &AFirstCharacter::OnHitboxBeginOverlap);
 
@@ -196,11 +198,19 @@ void AFirstCharacter::OnHitboxBeginOverlap(UPrimitiveComponent* OverlappedComp, 
 			}
 		}
 
+		// KnockbackDir: +1 if target is to the right of attacker, -1 if to the left
+		float KnockbackDir = (Target->GetActorLocation().X >= GetActorLocation().X) ? 1.0f : -1.0f;
 		Target->ReceiveDamage(Damage);
+		Target->RecieveKnockback(Damage, MovementComponent->GetCurrentAttackType(), KnockbackDir);
 	}
 }
 
 void AFirstCharacter::ReceiveDamage(float Damage)
 {
 	if (HealthComponent) HealthComponent->TakeDamage(Damage);
+}
+
+void AFirstCharacter::RecieveKnockback(float Damage, EAttackType AttackType, float KnockbackDir) {
+	if (MovementComponent && HealthComponent)
+		MovementComponent->DealKnockback(HealthComponent->GetHealthPercentage(), Damage, AttackType, KnockbackDir);
 }

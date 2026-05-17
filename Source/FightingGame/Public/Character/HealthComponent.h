@@ -15,6 +15,7 @@ class FIGHTINGGAME_API UHealthComponent : public UActorComponent
 public:
 	UHealthComponent();
 	void TakeDamage(float damage);
+	float GetHealthPercentage();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) float MaxHealth = 200.f;
 	UPROPERTY(BlueprintReadOnly) float CurrentHealth;
